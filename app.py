@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-import joblib
+import requests
 
 
 # --------------------------------------------------
@@ -15,12 +15,10 @@ st.set_page_config(
 
 
 # --------------------------------------------------
-# Load Model
+# FastAPI Backend
 # --------------------------------------------------
 
-MODEL_PATH = "model/INX_employee_performance_model.pkl"
-
-model = joblib.load(MODEL_PATH)
+API_URL = "https://employee-performance-prediction-ou48.onrender.com/predict"
 
 
 # --------------------------------------------------
@@ -277,9 +275,6 @@ if st.button(
     use_container_width=True
 ):
 
-    # Create input DataFrame using the exact
-    # feature names used during model training
-
     input_data = pd.DataFrame({
         "Age": [age],
         "Gender": [gender],
@@ -311,9 +306,31 @@ if st.button(
 
     try:
 
-        prediction = model.predict(input_data)
+        # Convert DataFrame to JSON-compatible dictionary
+        employee_data = input_data.to_dict(
+            orient="records"
+        )[0]
 
-        predicted_rating = int(prediction[0])
+        # Send employee data to FastAPI
+        response = requests.post(
+            API_URL,
+            json=employee_data,
+            timeout=60
+        )
+
+        # Raise an error if the API returns 4xx/5xx
+        response.raise_for_status()
+
+        # Read API response
+        result = response.json()
+
+        predicted_rating = int(
+            result["predicted_performance_rating"]
+        )
+
+        # --------------------------------------------------
+        # Display Prediction
+        # --------------------------------------------------
 
         st.success("Prediction Completed Successfully!")
 
@@ -333,26 +350,13 @@ if st.button(
         elif predicted_rating == 4:
             st.success("Performance Rating: 4")
 
-        # Prediction probabilities
-        if hasattr(model, "predict_proba"):
+    except requests.exceptions.RequestException as e:
 
-            probabilities = model.predict_proba(input_data)[0]
+        st.error(
+            "Unable to connect to the Employee Performance API."
+        )
 
-            probability_table = pd.DataFrame({
-                "Performance Rating": model.classes_,
-                "Probability": probabilities
-            })
-
-            probability_table["Probability"] = (
-                probability_table["Probability"] * 100
-            ).round(2)
-
-            st.subheader("📈 Prediction Probabilities")
-
-            st.dataframe(
-                probability_table,
-                use_container_width=True
-            )
+        st.exception(e)
 
     except Exception as e:
 
