@@ -2,31 +2,24 @@ import streamlit as st
 import pandas as pd
 import requests
 
-
 # --------------------------------------------------
 # Page Configuration
 # --------------------------------------------------
-
 st.set_page_config(
     page_title="Employee Performance Prediction",
     page_icon="👨‍💼",
     layout="wide"
 )
 
-
 # --------------------------------------------------
 # FastAPI Backend
 # --------------------------------------------------
-
 API_URL = "https://employee-performance-prediction-ou48.onrender.com/predict"
-
 
 # --------------------------------------------------
 # Title
 # --------------------------------------------------
-
 st.title("👨‍💼 Employee Performance Prediction System")
-
 st.write(
     "Predict an employee's performance rating using a trained "
     "Machine Learning model."
@@ -34,11 +27,9 @@ st.write(
 
 st.divider()
 
-
 # --------------------------------------------------
 # Employee Information
 # --------------------------------------------------
-
 st.header("👤 Employee Information")
 
 col1, col2, col3 = st.columns(3)
@@ -81,7 +72,7 @@ with col2:
         value=5
     )
 
-    education_level = st.number_input(
+    education_level = st.slider(
         "Employee Education Level",
         min_value=1,
         max_value=5,
@@ -91,30 +82,29 @@ with col2:
 with col3:
     environment_satisfaction = st.slider(
         "Environment Satisfaction",
-        1,
-        4,
-        4
+        min_value=1,
+        max_value=4,
+        value=4
     )
 
     job_satisfaction = st.slider(
         "Job Satisfaction",
-        1,
-        4,
-        4
+        min_value=1,
+        max_value=4,
+        value=4
     )
 
     relationship_satisfaction = st.slider(
         "Relationship Satisfaction",
-        1,
-        4,
-        4
+        min_value=1,
+        max_value=4,
+        value=4
     )
 
 
 # --------------------------------------------------
 # Job Information
 # --------------------------------------------------
-
 st.header("💼 Job Information")
 
 col1, col2, col3 = st.columns(3)
@@ -155,7 +145,7 @@ with col2:
         ]
     )
 
-    job_level = st.number_input(
+    job_level = st.slider(
         "Job Level",
         min_value=1,
         max_value=5,
@@ -164,9 +154,9 @@ with col2:
 
     job_involvement = st.slider(
         "Job Involvement",
-        1,
-        4,
-        3
+        min_value=1,
+        max_value=4,
+        value=3
     )
 
 with col3:
@@ -191,7 +181,6 @@ with col3:
 # --------------------------------------------------
 # Experience & Career Information
 # --------------------------------------------------
-
 st.header("📊 Experience & Career Information")
 
 col1, col2, col3 = st.columns(3)
@@ -228,9 +217,9 @@ with col2:
 
     work_life_balance = st.slider(
         "Work-Life Balance",
-        1,
-        4,
-        3
+        min_value=1,
+        max_value=4,
+        value=3
     )
 
     experience_company = st.number_input(
@@ -266,7 +255,6 @@ with col3:
 # --------------------------------------------------
 # Prediction
 # --------------------------------------------------
-
 st.divider()
 
 if st.button(
@@ -275,6 +263,7 @@ if st.button(
     use_container_width=True
 ):
 
+    # Create input DataFrame
     input_data = pd.DataFrame({
         "Age": [age],
         "Gender": [gender],
@@ -306,19 +295,19 @@ if st.button(
 
     try:
 
-        # Convert DataFrame to JSON-compatible dictionary
+        # Convert DataFrame to JSON
         employee_data = input_data.to_dict(
             orient="records"
         )[0]
 
-        # Send employee data to FastAPI
+        # Send request to FastAPI
         response = requests.post(
             API_URL,
             json=employee_data,
             timeout=60
         )
 
-        # Raise an error if the API returns 4xx/5xx
+        # Check for API errors
         response.raise_for_status()
 
         # Read API response
@@ -331,8 +320,7 @@ if st.button(
         # --------------------------------------------------
         # Display Prediction
         # --------------------------------------------------
-
-        st.success("Prediction Completed Successfully!")
+        st.success("✅ Prediction Completed Successfully!")
 
         st.subheader("🎯 Predicted Employee Performance")
 
@@ -341,25 +329,37 @@ if st.button(
             value=predicted_rating
         )
 
+        # Performance interpretation
         if predicted_rating == 2:
-            st.info("Performance Rating: 2")
+
+            st.warning(
+                "Performance Rating: 2 — Needs Improvement"
+            )
 
         elif predicted_rating == 3:
-            st.success("Performance Rating: 3")
+
+            st.info(
+                "Performance Rating: 3 — Meets Expectations"
+            )
 
         elif predicted_rating == 4:
-            st.success("Performance Rating: 4")
+
+            st.success(
+                "Performance Rating: 4 — Exceeds Expectations"
+            )
 
     except requests.exceptions.RequestException as e:
 
         st.error(
-            "Unable to connect to the Employee Performance API."
+            "❌ Unable to connect to the Employee Performance API."
         )
 
         st.exception(e)
 
     except Exception as e:
 
-        st.error("Unable to make prediction.")
+        st.error(
+            "❌ Unable to make prediction."
+        )
 
         st.exception(e)
